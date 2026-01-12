@@ -3,48 +3,56 @@ const inputEl = document.getElementById("input");
 const sendBtn = document.getElementById("send");
 const clearBtn = document.getElementById("clear");
 
-function addMsg(text, who) {
-  const wrap = document.createElement("div");
-  wrap.className = `msg ${who}`;
+function addBot(text) {
+  const row = document.createElement("div");
+  row.className = "msg bot";
 
-  if (who !== "user") {
-    const avatar = document.createElement("div");
-    avatar.className = "avatar";
-    avatar.textContent = "PG";
-    wrap.appendChild(avatar);
-  }
+  const avatar = document.createElement("div");
+  avatar.className = "avatar";
+  avatar.textContent = "PG";
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
   bubble.textContent = text;
 
-  wrap.appendChild(bubble);
-  chatEl.appendChild(wrap);
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  chatEl.appendChild(row);
   chatEl.scrollTop = chatEl.scrollHeight;
-  return wrap;
+  return row;
+}
+
+function addUser(text) {
+  const row = document.createElement("div");
+  row.className = "msg user";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = text;
+
+  row.appendChild(bubble);
+  chatEl.appendChild(row);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return row;
 }
 
 function addTyping() {
-  const wrap = document.createElement("div");
-  wrap.className = "msg bot";
+  const row = document.createElement("div");
+  row.className = "msg bot";
 
   const avatar = document.createElement("div");
   avatar.className = "avatar";
   avatar.textContent = "PG";
-  wrap.appendChild(avatar);
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
+  bubble.innerHTML = `<span class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>`;
 
-  const typing = document.createElement("div");
-  typing.className = "typing";
-  typing.innerHTML = `<span class="dot"></span><span class="dot"></span><span class="dot"></span>`;
-  bubble.appendChild(typing);
-
-  wrap.appendChild(bubble);
-  chatEl.appendChild(wrap);
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  chatEl.appendChild(row);
   chatEl.scrollTop = chatEl.scrollHeight;
-  return wrap;
+  return row;
 }
 
 function setDisabled(disabled) {
@@ -52,11 +60,14 @@ function setDisabled(disabled) {
   inputEl.disabled = disabled;
 }
 
-async function sendMessage(message) {
-  addMsg(message, "user");
-  inputEl.value = "";
+async function sendMessage() {
+  const message = (inputEl.value || "").trim();
+  if (!message) return;
 
+  addUser(message);
+  inputEl.value = "";
   setDisabled(true);
+
   const typingNode = addTyping();
 
   try {
@@ -70,53 +81,40 @@ async function sendMessage(message) {
     if (!resp.ok) throw new Error(data?.error || "Request failed");
 
     typingNode.remove();
-    addMsg(data.text || "(No response)", "bot");
+    addBot(data.text || "(No response)");
   } catch (err) {
     typingNode.remove();
-    addMsg(`Error: ${err.message}`, "bot");
+    addBot(`Error: ${err.message}`);
   } finally {
     setDisabled(false);
     inputEl.focus();
   }
 }
 
-// Initial greeting
-addMsg(
-  "Hi! I’m Philly GPT. Ask me about reporting issues, city services, parking basics, or transit. If something is time-sensitive, I’ll tell you how to verify it.",
-  "bot"
-);
+// Greeting (proves app.js is running)
+addBot("Hi! I’m Philly GPT. Ask me about 311-type issues, parking basics, and SEPTA tips.");
 
-// Send on button
-sendBtn.addEventListener("click", () => {
-  const message = inputEl.value.trim();
-  if (!message) return;
-  sendMessage(message);
-});
+// Click send
+sendBtn.addEventListener("click", () => sendMessage());
 
-// Send on Enter (but allow Shift+Enter for new line)
+// Enter to send; Shift+Enter for new line
 inputEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
-    const message = inputEl.value.trim();
-    if (!message) return;
-    sendMessage(message);
+    sendMessage();
   }
 });
 
-// Clear
+// Clear button
 clearBtn.addEventListener("click", () => {
   chatEl.innerHTML = "";
-  addMsg(
-    "Chat cleared. Ask a new Philly question whenever you’re ready.",
-    "bot"
-  );
+  addBot("Chat cleared. Ask a new Philly question whenever you’re ready.");
 });
 
-// Quick question chips
+// Quick question buttons
 document.querySelectorAll(".chip").forEach((btn) => {
   btn.addEventListener("click", () => {
-    const q = btn.getAttribute("data-q");
-    inputEl.value = q;
+    inputEl.value = btn.getAttribute("data-q") || "";
     inputEl.focus();
   });
 });
