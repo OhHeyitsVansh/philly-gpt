@@ -10,14 +10,17 @@ export async function onRequestPost(context) {
     }
 
     if (!env.OPENAI_API_KEY) {
-      return json({ error: "Missing OPENAI_API_KEY in Cloudflare Pages Secrets." }, 500);
+      return json({ error: "Missing OPENAI_API_KEY in Cloudflare Pages Secrets (Production)." }, 500);
     }
 
     const instructions = `
-You are Philly GPT, a helpful civic assistant for Philadelphia.
-Give practical steps and suggest official sources to verify details.
-Do not request sensitive personal info. For emergencies: 911.
-If a question is not Philly-related, still help but keep it concise.
+You are Philly GPT, a civic helper for Philadelphia.
+Goal: give practical steps, include what to check next, and point to official sources where appropriate.
+Rules:
+- Do not request sensitive personal information.
+- If emergency or immediate danger: tell them to call 911.
+- If time-sensitive info (routes, hours, fares): tell them to verify on official sites/apps.
+Tone: clear, friendly, concise.
 `.trim();
 
     const r = await fetch("https://api.openai.com/v1/responses", {
@@ -30,7 +33,7 @@ If a question is not Philly-related, still help but keep it concise.
         model: "gpt-4o-mini",
         instructions,
         input: message,
-        max_output_tokens: 350,
+        max_output_tokens: 450,
         store: false
       }),
     });
@@ -67,7 +70,7 @@ function json(obj, status = 200) {
     status,
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": "no-store",
+      "Cache-Control": "no-store"
     },
   });
 }
